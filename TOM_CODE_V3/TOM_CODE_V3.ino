@@ -27,7 +27,7 @@ Vanderbilt University
 
 /* Constants */
 // Sleep Timeout Value
-#define TIMEOUT_VALUE 20000 //300000 for 5 minutes
+#define TIMEOUT_VALUE 420000 // about 5 minutes
 
 // Device States
 #define SLEEPING 0
@@ -35,13 +35,14 @@ Vanderbilt University
 #define EXTENDED 2
 #define EXTENDING 3
 #define RETRACTING 4
+#define WAKING 5
 
 /* Setup Data Vars */
 int buttonSignal;
 int deviceState;
 int extending;
 int retracting;
-int curTime;
+long curTime;
 
 /* Function Declarations */
 void pulseLED(int LED, int time_ms);
