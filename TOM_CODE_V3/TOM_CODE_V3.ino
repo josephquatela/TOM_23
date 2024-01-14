@@ -25,6 +25,10 @@ Vanderbilt University
 #define LS1 4
 #define LS2 5
 
+// Battery Voltage
+#define BATTERY_PIN 8
+
+
 /* Constants */
 // Sleep Timeout Value
 #define TIMEOUT_VALUE 420000 // about 5 minutes
@@ -37,12 +41,17 @@ Vanderbilt University
 #define RETRACTING 4
 #define WAKING 5
 
+// Max Battery Voltage
+#define MAX_BAT 2.1
+#define MIN_BAT 1.125
+
 /* Setup Data Vars */
 int buttonSignal;
 int deviceState;
 int extending;
 int retracting;
 long curTime;
+float batteryLevel;
 
 /* Function Declarations */
 void pulseLED(int LED, int time_ms);
@@ -51,8 +60,8 @@ void testMotors(int time_ms);
 void extend();
 void enableInterrupt();
 void goToSleep();
-void startTimer();
-void stopTimer();
+float getBatteryLevel();
+void flashBatteryLevel();
 
 // pulseLED - Pulses the given LED for "time_ms" amount of time (in ms)
 void pulseLED(int LED, int time_ms) {
@@ -127,6 +136,59 @@ void goToSleep() {
   sleep_cpu();
 }
 
+// getBatteryLevel
+float getBatteryLevel() {
+  float batteryReading;
+  float curVoltage;
+  curVoltage = MAX_BAT - analogRead(BATTERY_PIN);
+  batteryReading = curVoltage / (MAX_BAT - MIN_BAT);
+  return batteryReading;
+}
+
+// flashBatteryLevel
+void flashBatteryLevel() {
+  if (batteryLevel <= 0.25 ) {
+    digitalWrite(LED0, 1);
+    delay(1000);
+    digitalWrite(LED0, 0);
+  } else if (batteryLevel <= 0.5) {
+    digitalWrite(LED0, 1);
+    digitalWrite(LED1, 1);
+    delay(1000);
+    digitalWrite(LED0, 0);
+    digitalWrite(LED1, 0);
+  } else if (batteryLevel <= 0.75) {
+    digitalWrite(LED0, 1);
+    digitalWrite(LED1, 1);
+    digitalWrite(LED2, 1);
+    delay(1000);
+    digitalWrite(LED0, 0);
+    digitalWrite(LED1, 0);
+    digitalWrite(LED2, 0);
+  } else if (batteryLevel <= 1) {
+    digitalWrite(LED0, 1);
+    digitalWrite(LED1, 1);
+    digitalWrite(LED2, 1);
+    digitalWrite(LED3, 1);
+    delay(1000);
+    digitalWrite(LED0, 0);
+    digitalWrite(LED1, 0);
+    digitalWrite(LED2, 0);
+    digitalWrite(LED3, 0);
+  } else {
+    digitalWrite(LED0, 1);
+    digitalWrite(LED2, 1);
+    delay(1000);
+    digitalWrite(LED0, 0);
+    digitalWrite(LED2, 0);
+    digitalWrite(LED1, 1);
+    digitalWrite(LED3, 1);
+    delay(1000);
+    digitalWrite(LED1, 0);
+    digitalWrite(LED3, 0);
+  }
+}
+
 // Wakeup ISR
 ISR(PORTA_PORT_vect, ISR_BLOCK) {
   // Update deviceState and return. Disable interrupts on next instruction.
@@ -136,6 +198,10 @@ ISR(PORTA_PORT_vect, ISR_BLOCK) {
   PORTA.PIN6CTRL = 0x00;
   // Clear Interrupt Flag by writing 1's
   PORTA.INTFLAGS = 0xFF;
+
+  // Display Battery Level
+  batteryLevel = getBatteryLevel();
+  flashBatteryLevel();
 
   // Disable sleep
   SLPCTRL.CTRLA = 0x00;
