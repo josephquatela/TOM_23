@@ -31,7 +31,7 @@ Vanderbilt University
 
 /* Constants */
 // Sleep Timeout Value
-#define TIMEOUT_VALUE 420000 // about 5 minutes
+#define TIMEOUT_VALUE 420000 // 420000 about 5 minutes
 
 // Device States
 #define SLEEPING 0
@@ -41,9 +41,10 @@ Vanderbilt University
 #define RETRACTING 4
 #define WAKING 5
 
-// Max Battery Voltage
-#define MAX_BAT 2.1
-#define MIN_BAT 1.125
+// Battery Values
+#define MAX_ADC 978
+#define MIN_ADC 524
+#define ADC_INTERVAL 114
 
 /* Setup Data Vars */
 int buttonSignal;
@@ -138,26 +139,24 @@ void goToSleep() {
 
 // getBatteryLevel
 float getBatteryLevel() {
-  float batteryReading;
-  float curVoltage;
-  curVoltage = MAX_BAT - analogRead(BATTERY_PIN);
-  batteryReading = curVoltage / (MAX_BAT - MIN_BAT);
-  return batteryReading;
+  int ADCValue;
+  ADCValue = analogRead(BATTERY_PIN);
+  return ADCValue;
 }
 
 // flashBatteryLevel
 void flashBatteryLevel() {
-  if (batteryLevel <= 0.25 ) {
+  if (batteryLevel <= MIN_ADC + ADC_INTERVAL) {
     digitalWrite(LED0, 1);
     delay(1000);
     digitalWrite(LED0, 0);
-  } else if (batteryLevel <= 0.5) {
+  } else if (batteryLevel <= MIN_ADC + 2* ADC_INTERVAL) {
     digitalWrite(LED0, 1);
     digitalWrite(LED1, 1);
     delay(1000);
     digitalWrite(LED0, 0);
     digitalWrite(LED1, 0);
-  } else if (batteryLevel <= 0.75) {
+  } else if (batteryLevel <= MIN_ADC + 3* ADC_INTERVAL) {
     digitalWrite(LED0, 1);
     digitalWrite(LED1, 1);
     digitalWrite(LED2, 1);
@@ -165,7 +164,7 @@ void flashBatteryLevel() {
     digitalWrite(LED0, 0);
     digitalWrite(LED1, 0);
     digitalWrite(LED2, 0);
-  } else if (batteryLevel <= 1) {
+  } else if (batteryLevel <= MAX_ADC) {
     digitalWrite(LED0, 1);
     digitalWrite(LED1, 1);
     digitalWrite(LED2, 1);
@@ -199,10 +198,6 @@ ISR(PORTA_PORT_vect, ISR_BLOCK) {
   // Clear Interrupt Flag by writing 1's
   PORTA.INTFLAGS = 0xFF;
 
-  // Display Battery Level
-  batteryLevel = getBatteryLevel();
-  flashBatteryLevel();
-
   // Disable sleep
   SLPCTRL.CTRLA = 0x00;
 
@@ -224,9 +219,13 @@ void setup() {
   pinMode(BACKWARD, OUTPUT);
 
   // Test basic functions
-  testLEDs(1000);
-  delay(1000);
-  testMotors(500);
+//  testLEDs(1000);
+//  delay(1000);
+//  testMotors(500);
+
+  // Display Battery Level
+  batteryLevel = getBatteryLevel();
+  flashBatteryLevel();
 
   // Set initial state to retracted (homed and not sleeping)
   deviceState = RETRACTED;
@@ -277,5 +276,3 @@ void loop() {
     goToSleep();
   }
 }
-
-
